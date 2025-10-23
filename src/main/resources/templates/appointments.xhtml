@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+<h:head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Agendamentos</title>
+</h:head>
+<h:body>
+    <h:form>
+        <h:panelGrid columns="2">
+            <h:outputLabel for="patient" value="Paciente:" />
+            <h:selectOneMenu id="patient" value="#{appointmentBean.patientId}">
+                <f:selectItems value="#{appointmentBean.patients}" var="p"
+                               itemValue="#{p.id}" itemLabel="#{p.name}" />
+            </h:selectOneMenu>
+
+            <h:outputLabel for="doctor" value="Médico:" />
+            <h:selectOneMenu id="doctor" value="#{appointmentBean.doctorId}">
+                <f:selectItems value="#{appointmentBean.doctors}" var="d"
+                               itemValue="#{d.id}" itemLabel="#{d.name}" />
+            </h:selectOneMenu>
+
+            <h:outputLabel for="dateTime" value="Data e Hora (ISO):" />
+            <h:inputText id="dateTime" value="#{appointmentBean.dateTimeIso}" />
+        </h:panelGrid>
+
+        <h:commandButton value="Agendar" action="#{appointmentBean.schedule}" />
+    </h:form>
+
+    <h:dataTable value="#{appointmentBean.appointments}" var="a">
+        <h:column>
+            <f:facet name="header">Data/Hora</f:facet>
+            <h:outputText value="#{a.dateTime}" />
+        </h:column>
+        <h:column>
+            <f:facet name="header">Paciente</f:facet>
+            <h:outputText value="#{a.patient.name}" />
+        </h:column>
+        <h:column>
+            <f:facet name="header">Médico</f:facet>
+            <h:outputText value="#{a.doctor.name}" />
+        </h:column>
+    </h:dataTable>
+
+    <h:link outcome="index.xhtml" value="Voltar" />
+</h:body>
+</html>
