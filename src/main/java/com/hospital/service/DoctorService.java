@@ -9,6 +9,7 @@ import com.hospital.repository.DoctorRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -31,8 +32,17 @@ public class DoctorService {
                 .orElseThrow(() -> new jakarta.ws.rs.NotFoundException("Compromisso não encontrado"));
     }
 
-    public Doctor save(Doctor appointment){
-        return doctorRepository.save(appointment);
+    public Doctor create(Doctor doctor){
+        if(doctor == null)
+            throw new IllegalArgumentException("Request invalid");
+        
+        if(StringUtils.isBlank(doctor.getName()))
+            throw new IllegalArgumentException("Nome do medico é obrigatório");
+        
+        if(StringUtils.isBlank(doctor.getSpecialty()))
+            throw new IllegalArgumentException("Especialidade do medico é obrigatório");
+        
+        return doctorRepository.save(doctor);
     };
     
     public void delete(Long id){

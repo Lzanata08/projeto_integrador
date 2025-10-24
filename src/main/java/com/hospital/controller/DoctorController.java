@@ -40,7 +40,7 @@ public class DoctorController {
 
     @PostMapping("/doctors")
     public Doctor create(@RequestBody Doctor doctor) {
-        return doctorService.save(doctor);
+        return doctorService.create(doctor);
         
     }
     

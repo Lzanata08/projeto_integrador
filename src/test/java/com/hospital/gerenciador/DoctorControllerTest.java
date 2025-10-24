@@ -68,12 +68,12 @@ class DoctorControllerTest {
     @Test
     void testCreateDoctor() {
         Doctor d = new Doctor();
-        when(doctorService.save(d)).thenReturn(d);
+        when(doctorService.create(d)).thenReturn(d);
 
         Doctor result = doctorController.create(d);
 
         assertNotNull(result);
-        verify(doctorService).save(d);
+        verify(doctorService).create(d);
     }
 
     @Test

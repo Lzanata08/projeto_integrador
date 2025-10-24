@@ -21,6 +21,12 @@ public class Patient {
         this.name = name;
         this.cpf = cpf;
     }
+    
+    public Patient(String name, String cpf, LocalDate birthDate) {
+        this.name = name;
+        this.cpf = cpf;
+        this.birthDate = birthDate;
+    }
 
     public Long getId() { return id; }
     public void setId(Long id ) { this.id = id; }

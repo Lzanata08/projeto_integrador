@@ -68,12 +68,12 @@ class AppointmentControllerTest {
     @Test
     void testCreateAppointment() {
         Appointment ap = new Appointment();
-        when(appointmentService.save(ap)).thenReturn(ap);
+        when(appointmentService.create(ap)).thenReturn(ap);
 
         Appointment result = appointmentController.create(ap);
 
         assertNotNull(result);
-        verify(appointmentService).save(ap);
+        verify(appointmentService).create(ap);
     }
 
     @Test

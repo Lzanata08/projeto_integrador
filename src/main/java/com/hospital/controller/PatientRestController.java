@@ -45,7 +45,7 @@ public class PatientRestController {
 
     @PostMapping
     public ResponseEntity<Patient> create(@RequestBody Patient patient) {
-        Patient saved = service.save(patient);
+        Patient saved = service.create(patient);
         return ResponseEntity.created(URI.create("/api/patients/" + saved.getId())).body(saved);
     }
 

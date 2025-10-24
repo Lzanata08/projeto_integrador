@@ -36,7 +36,7 @@ public class AppointmentController {
 
     @PostMapping("/appointments")
     public Appointment create(@RequestBody Appointment appointment) {                
-        return appointmentService.save(appointment);
+        return appointmentService.create(appointment);
     }
     
     @DeleteMapping("/appointments/{id}")

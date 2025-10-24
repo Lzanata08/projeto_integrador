@@ -39,8 +39,15 @@ public class AppointmentService {
                 .orElseThrow(() -> new jakarta.ws.rs.NotFoundException("Compromisso não encontrado"));
     }
 
-    public Appointment save(Appointment appointment){
-        return appointmentRepository.save(appointment);
+    public Appointment create(Appointment appointment){
+        
+        if(appointment.getDateTime().toLocalDate().isBefore(LocalDateTime.now().toLocalDate()) ){
+            throw new java.lang.IllegalArgumentException("Data da consulta inválida");
+        } else {
+            return appointmentRepository.save(appointment);
+        }
+        
+        
     };
     
     public void delete(Long id){

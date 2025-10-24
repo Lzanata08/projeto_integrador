@@ -2,6 +2,8 @@ package com.hospital.service;
 
 import com.hospital.model.Patient;
 import com.hospital.repository.PatientRepository;
+import java.time.LocalDate;
+import java.time.Period;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
@@ -22,7 +24,22 @@ public class PatientService {
         if (p.getName() == null || p.getName().isBlank()) {
             throw new IllegalArgumentException("Nome do paciente é obrigatório");
         }
+        
+        if(!isAdult(p.getBirthDate())){
+            throw new IllegalArgumentException("Paciente precisa ter mais de 18 anos.");
+        }
+       
+        
         return patientRepository.save(p);
+    }
+    
+    public static boolean isAdult(LocalDate birthdate) {
+        if (birthdate == null) return false;
+
+        LocalDate today = LocalDate.now();
+        Period age = Period.between(birthdate, today);
+
+        return age.getYears() >= 18;
     }
 
     public List<Patient> findAll() {
@@ -35,10 +52,6 @@ public class PatientService {
                 .orElseThrow(() -> new jakarta.ws.rs.NotFoundException("Compromisso não encontrado"));
     }
   
-    public Patient save(Patient patient){
-        return patientRepository.save(patient);
-    };  
-    
      public void delete(Long id){
          patientRepository.deleteById(id);
     };
@@ -47,7 +60,7 @@ public class PatientService {
         return patientRepository.findById(id).map(existing -> {
             existing.setName(patient.getName());
             existing.setCpf(patient.getCpf());
-            save(existing);
+            patientRepository.save(patient);
             return ResponseEntity.ok(existing);
         }).orElseGet(() -> ResponseEntity.notFound().build());
     }
