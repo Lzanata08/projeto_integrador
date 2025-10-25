@@ -38,7 +38,7 @@ class DoctorServiceTest {
     
     
     @Test
-    void testCreateDoctor_badRequest() throws Exception {
+    void testCreateDoctor_nameEmpty() throws Exception {
          Doctor p = new Doctor("", "pediatra");
 
 
@@ -48,12 +48,12 @@ class DoctorServiceTest {
                 () -> doctorRestController.create(p) // código que deve lançar a exceção
         );
 
-        assertEquals("Paciente precisa ter mais de 18 anos.", exception.getMessage());
+        assertEquals("Nome do medico é obrigatório", exception.getMessage());
 
     }
 
     @Test
-    void testCreateDoctor_nameEmpty() throws Exception {
+    void testCreateDoctor_especialityEmpty() throws Exception {
          Doctor p = new Doctor("paulo", "");
 
 
@@ -63,7 +63,7 @@ class DoctorServiceTest {
                 () -> doctorRestController.create(p) // código que deve lançar a exceção
         );
 
-        assertEquals("Nome do paciente é obrigatório", exception.getMessage());
+        assertEquals("Especialidade do medico é obrigatório", exception.getMessage());
 
     }
 

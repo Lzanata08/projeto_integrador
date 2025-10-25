@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Painel Clínico</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+<div class="brand">🏥 Sistema hospitalar</div>
+<nav class="menu">
+<a class="menu-item" href="index.html">Início</a>
+<a class="menu-item" href="medicos.html">Médico</a>
+<a class="menu-item" href="pacientes.html">Paciente</a>
+<a class="menu-item" href="consultas.html">Consulta</a>
+</nav>
+<footer class="sidebar-footer">v1.0</footer>
+</aside>
+
+<main class="content">
+  <header class="topbar">
+    <h1>Consultas</h1>
+    <div class="actions">
+      <button id="btnNovaConsulta" class="btn-primary">Agendar nova consulta</button>
+      <input type="search" id="searchConsultas" placeholder="Buscar consulta..." />
+    </div>
+  </header>
+
+  <section class="card">
+    <div class="card-body">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Paciente</th><th>Doutor</th><th>Data</th><th>Hora</th></tr>
+          </thead>
+          <tbody id="tbody-consultas-list"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Drawer lateral -->
+  <div id="drawer" class="drawer" hidden>
+    <div class="drawer-header">
+      <strong id="drawer-paciente">Nome do Paciente</strong>
+      <button id="drawer-close" class="icon-btn">✕</button>
+    </div>
+    <div class="drawer-body">
+      <p><span class="muted">Doutor:</span> <span id="drawer-doutor"></span></p>
+      <p><span class="muted">Data:</span> <span id="drawer-data"></span></p>
+      <p><span class="muted">Hora:</span> <span id="drawer-hora"></span></p>
+    </div>
+    <div class="drawer-footer">
+      <button id="btnAtualizar" class="btn-secondary">Atualizar</button>
+      <button id="btnExcluir" class="btn-danger">Excluir</button>
+    </div>
+  </div>
+</main>
+</div>
+<script src="consultas.js"></script>
+</body>
+</html>

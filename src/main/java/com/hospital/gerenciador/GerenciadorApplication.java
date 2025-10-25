@@ -1,4 +1,4 @@
-        package com.hospital.gerenciador;
+package com.hospital.gerenciador;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

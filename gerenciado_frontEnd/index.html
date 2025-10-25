@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Painel Clínico</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+<div class="brand">🏥 Sistema hospitalar</div>
+<nav class="menu">
+<a class="menu-item" href="index.html">Início</a>
+<a class="menu-item" href="medicos.html">Médico</a>
+<a class="menu-item" href="pacientes.html">Paciente</a>
+<a class="menu-item" href="consultas.html">Consulta</a>
+</nav>
+<footer class="sidebar-footer">v1.0</footer>
+</aside>
+
+
+
+
+<main class="content">
+<header class="topbar">
+<h1>Listagens</h1>
+<div class="actions">
+<input type="search" id="globalSearch" placeholder="Pesquisar em todas as listas..." />
+</div>
+</header>
+
+
+<section id="medicos" class="card">
+<div class="card-header">
+<h2>Médicos</h2>
+</div>
+<div class="card-body">
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Nome</th>
+<th>Especialidade</th>
+</tr>
+</thead>
+<tbody id="tbody-medicos"></tbody>
+</table>
+</div>
+</div>
+</section>
+
+<section id="pacientes" class="card">
+<div class="card-header">
+<h2>Pacientes</h2>
+</div>
+<div class="card-body">
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Nome</th>
+<th>Data de Nascimento</th>
+<th>CPF</th>
+</tr>
+</thead>
+<tbody id="tbody-pacientes"></tbody>
+</table>
+</div>
+</div>
+</section>
+
+
+<section id="consultas" class="card">
+<div class="card-header">
+<h2>Consultas</h2>
+</div>
+<div class="card-body">
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Paciente</th>
+<th>Médico</th>
+<th>Data</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody id="tbody-consultas"></tbody>
+</table>
+</div>
+</div>
+</section>
+
+
+
+<footer class="content-footer">
+<small>Exemplo estático — substitua pelos seus dados ou conecte a uma API.</small>
+</footer>
+</main>
+</div>
+
+
+<script src="app.js"></script>
+</body>
+</html>

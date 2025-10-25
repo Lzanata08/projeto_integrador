@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pacientes — Sistema hospitalar</title>
+<link rel="stylesheet" href="styles.css" />
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <div class="brand">🏥 Sistema hospitalar</div>
+  <nav class="menu">
+    <a class="menu-item" href="index.html">Início</a>
+    <a class="menu-item" href="medicos.html">Médico</a>
+    <a class="menu-item" href="pacientes.html">Paciente</a>
+    <a class="menu-item" href="consultas.html">Consulta</a>
+  </nav>
+  <footer class="sidebar-footer">v1.0</footer>
+</aside>
+
+<main class="content">
+  <header class="topbar">
+    <h1>Pacientes</h1>
+    <div class="actions">
+      <button id="btnNovoPaciente" class="btn-primary">Cadastrar novo paciente</button>
+      <input type="search" id="searchPacientes" placeholder="Buscar paciente..." />
+    </div>
+  </header>
+
+  <section class="card">
+    <div class="card-body">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Nome</th><th>CPF</th><th>Data de Nascimento</th></tr>
+          </thead>
+          <tbody id="tbody-pacientes-list"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Drawer de Paciente -->
+  <div id="drawer" class="drawer" hidden>
+    <div class="drawer-header">
+      <strong id="drawer-nome">Nome do Paciente</strong>
+      <button id="drawer-close" class="icon-btn">✕</button>
+    </div>
+    <div class="drawer-body">
+      <p><span class="muted">CPF:</span> <span id="drawer-cpf"></span></p>
+      <p><span class="muted">Data de Nascimento:</span> <span id="drawer-nascimento"></span></p>
+    </div>
+    <div class="drawer-footer">
+      <button id="btnAtualizar" class="btn-secondary">Atualizar</button>
+      <button id="btnExcluir" class="btn-danger">Excluir</button>
+    </div>
+  </div>
+</main>
+</div>
+<script src="pacientes.js"></script>
+</body>
+</html>
