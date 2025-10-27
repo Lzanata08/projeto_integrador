@@ -33,7 +33,7 @@
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>Paciente</th><th>Doutor</th><th>Data</th><th>Hora</th></tr>
+            <tr><th>Paciente</th><th>Doutor</th><th>Data</th><th>Hora</th><th>Notas</th></tr>
           </thead>
           <tbody id="tbody-consultas-list"></tbody>
         </table>
@@ -59,6 +59,47 @@
   </div>
 </main>
 </div>
+
+<!-- Modal: Nova Consulta -->
+<div id="nova-consulta-modal" class="modal" style="display:none;">
+  <div class="modal-panel">
+    <div class="modal-header" style="display:flex; align-items:center; justify-content:space-between;">
+      <h3 class="modal-title">Agendar nova consulta</h3>
+      <button id="modal-close" class="modal-close" aria-label="Fechar">✕</button>
+    </div>
+    <div class="modal-body">
+      <label>
+        <span>Paciente</span>
+        <select id="selectPaciente">
+          <option value="" selected disabled>Selecione o paciente</option>
+        </select>
+      </label>
+      <label>
+        <span>Médico</span>
+        <select id="selectMedico">
+          <option value="" selected disabled>Selecione o médico</option>
+        </select>
+      </label>
+      <label>
+        <span>Data e hora</span>
+        <input id="inputDateTime" type="datetime-local" />
+      </label>
+      <label>
+        <span>Observações</span>
+        <textarea id="inputNotes" rows="3" placeholder="(opcional)"></textarea>
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button id="modal-cancel" class="btn-secondary">Cancelar</button>
+      <button id="modal-save" class="btn-primary">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 <script src="consultas.js"></script>
+
+</div>
+
 </body>
 </html>

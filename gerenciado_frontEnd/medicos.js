@@ -1,108 +1,203 @@
-// ===== Sistema de Médicos com Drawer + LocalStorage =====
+const BASE_URL = "http://localhost:8080/api";
+const API = {
+  list: () => $.ajax({ url: `${BASE_URL}/doctors`, method: "GET" }),
+  get: (id) => $.ajax({ url: `${BASE_URL}/doctors/${encodeURIComponent(id)}`, method: "GET" }),
+  create: (data) =>
+    $.ajax({
+      url: `${BASE_URL}/doctors`,
+      method: "POST",
+      contentType: "application/json",
+      data: JSON.stringify(data),
+    }),
+  update: (id, data) =>
+    $.ajax({
+      url: `${BASE_URL}/doctors/${encodeURIComponent(id)}`,
+      method: "PUT",
+      contentType: "application/json",
+      data: JSON.stringify(data),
+    }),
+  remove: (id) => $.ajax({ url: `${BASE_URL}/doctors/${encodeURIComponent(id)}`, method: "DELETE" }),
+};
 
-// Chave para salvar no localStorage
-const STORAGE_KEY = "lista_medicos";
+// Elementos da UI
+const $tbody = $("#tbody-medicos-list");
+const $drawer = $("#drawer");
+const $drawerNome = $("#drawer-nome");
+const $drawerEspecialidade = $("#drawer-especialidade");
+const $drawerClose = $("#drawer-close");
+const $btnAtualizar = $("#btnAtualizar");
+const $btnExcluir = $("#btnExcluir");
+const $btnNovo = $("#btnNovoMedico");
+const $search = $("#searchMedicos");
 
-// Carrega médicos salvos ou cria lista inicial
-let medicos = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [
-  { id: 1, nome: "Dr. João Silva", especialidade: "Cardiologia" },
-  { id: 2, nome: "Dra. Ana Costa", especialidade: "Pediatria" },
-];
-
-const tbody = document.getElementById("tbody-medicos-list");
-const drawer = document.getElementById("drawer");
-const drawerNome = document.getElementById("drawer-nome");
-const drawerEspecialidade = document.getElementById("drawer-especialidade");
-const drawerClose = document.getElementById("drawer-close");
-const btnAtualizar = document.getElementById("btnAtualizar");
-const btnExcluir = document.getElementById("btnExcluir");
-const btnNovo = document.getElementById("btnNovoMedico");
-
+// Estado em memória
+let medicos = []; // [{id, name, speciality}]
 let medicoSelecionado = null;
 
-// ===== Funções principais =====
-
-// Salva no localStorage
-function salvarNoLocalStorage() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(medicos));
+// ==== Helpers de mapeamento (API -> UI e UI -> API) ====
+function apiToUi(doc) {
+  // API: {id, name, speciality} -> UI: {id, nome, especialidade}
+  return { id: doc.id, nome: doc.name, especialidade: doc.speciality };
+}
+function uiToApi(ui) {
+  // UI: {id, nome, especialidade} -> API: {id, name, speciality}
+  const base = { name: ui.nome, speciality: ui.especialidade };
+  if (ui.id != null) base.id = ui.id;
+  return base;
 }
 
-// Renderiza tabela de médicos
-function renderMedicos() {
-  tbody.innerHTML = "";
-  if (medicos.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="2" style="text-align:center; color:var(--muted);">Nenhum médico cadastrado</td></tr>`;
+// ==== Renderização ====
+function renderTabela(lista) {
+  $tbody.empty();
+  if (!lista || lista.length === 0) {
+    $tbody.append(
+      `<tr><td colspan="2" style="text-align:center; color:var(--muted);">Nenhum médico cadastrado</td></tr>`
+    );
     return;
   }
 
-  medicos.forEach((m) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${m.nome}</td><td>${m.especialidade}</td>`;
-    tr.classList.add("row-clickable");
-    tr.addEventListener("click", () => abrirDrawer(m));
-    tbody.appendChild(tr);
+  lista.forEach((m) => {
+    const $tr = $(`
+      <tr class="row-clickable">
+        <td>${escapeHtml(m.nome)}</td>
+        <td>${escapeHtml(m.especialidade)}</td>
+      </tr>
+    `);
+    $tr.on("click", () => abrirDrawer(m));
+    $tbody.append($tr);
   });
 }
 
-// Abre o drawer lateral
-function abrirDrawer(medico) {
-  medicoSelecionado = medico;
-  drawerNome.textContent = medico.nome;
-  drawerEspecialidade.textContent = medico.especialidade;
-  drawer.classList.add("open");
-  drawer.removeAttribute("hidden");
-  drawer.setAttribute("aria-hidden", "false");
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
-// Fecha o drawer
-drawerClose.addEventListener("click", () => {
-  drawer.classList.remove("open");
-  drawer.setAttribute("aria-hidden", "true");
-  setTimeout(() => drawer.setAttribute("hidden", "true"), 250);
+// ==== Drawer ====
+function abrirDrawer(m) {
+  medicoSelecionado = m;
+  $drawerNome.text(m.nome);
+  $drawerEspecialidade.text(m.especialidade);
+  $drawer.addClass("open").removeAttr("hidden").attr("aria-hidden", "false");
+}
+
+function fecharDrawer() {
+  $drawer.removeClass("open").attr("aria-hidden", "true");
+  // espera a animação (se houver)
+  setTimeout(() => $drawer.attr("hidden", "true"), 250);
+}
+
+$drawerClose.on("click", fecharDrawer);
+
+// ==== Ações CRUD ====
+async function carregarMedicos() {
+  mostrarCarregando();
+  try {
+    const lista = await API.list();
+    // Garante array e mapeia para formato de UI
+    medicos = (Array.isArray(lista) ? lista : []).map(apiToUi);
+    aplicarFiltroERender();
+  } catch (err) {
+    mostrarErro("Falha ao carregar médicos.");
+    console.error(err);
+  }
+}
+
+function mostrarCarregando() {
+  $tbody.html(
+    `<tr><td colspan="2" style="text-align:center;">Carregando...</td></tr>`
+  );
+}
+
+function mostrarErro(msg) {
+  $tbody.html(
+    `<tr><td colspan="2" style="text-align:center; color:#b00020;">${escapeHtml(
+      msg
+    )}</td></tr>`
+  );
+}
+
+// Cadastrar
+$btnNovo.on("click", async () => {
+  const nome = prompt("Nome do médico:");
+  if (!nome) return;
+  const especialidade = prompt("Especialidade:");
+  if (!especialidade) return;
+
+  try {
+    console.log(uiToApi({ nome, especialidade }));
+    await API.create(uiToApi({ nome, especialidade }));
+    console.log("Médico cadastrado com sucesso.");
+    await carregarMedicos();
+  } catch (err) {
+    alert("Não foi possível cadastrar o médico.");
+    console.error(err);
+  }
 });
 
-// Atualizar médico
-btnAtualizar.addEventListener("click", () => {
+// Atualizar
+$btnAtualizar.on("click", async () => {
   if (!medicoSelecionado) return;
   const novoNome = prompt("Atualizar nome:", medicoSelecionado.nome);
-  const novaEsp = prompt("Atualizar especialidade:", medicoSelecionado.especialidade);
+  if (!novoNome) return;
+  const novaEsp = prompt(
+    "Atualizar especialidade:",
+    medicoSelecionado.especialidade
+  );
+  if (!novaEsp) return;
 
-  if (novoNome && novaEsp) {
-    medicoSelecionado.nome = novoNome;
-    medicoSelecionado.especialidade = novaEsp;
-    salvarNoLocalStorage();
-    renderMedicos();
-    abrirDrawer(medicoSelecionado);
+  try {
+    await API.update(medicoSelecionado.id, uiToApi({ nome: novoNome, especialidade: novaEsp }));
+    await carregarMedicos();
+    // Reabrir drawer com dados atualizados
+    const atualizado = medicos.find((m) => m.id === medicoSelecionado.id);
+    if (atualizado) abrirDrawer(atualizado);
+  } catch (err) {
+    alert("Não foi possível atualizar o médico.");
+    console.error(err);
   }
 });
 
-// Excluir médico
-btnExcluir.addEventListener("click", () => {
+// Excluir
+$btnExcluir.on("click", async () => {
   if (!medicoSelecionado) return;
-  if (confirm(`Tem certeza que deseja excluir ${medicoSelecionado.nome}?`)) {
-    medicos = medicos.filter((m) => m.id !== medicoSelecionado.id);
-    salvarNoLocalStorage();
-    renderMedicos();
-    drawerClose.click();
+  const ok = confirm(`Tem certeza que deseja excluir ${medicoSelecionado.nome}?`);
+  if (!ok) return;
+
+  try {
+    await API.remove(medicoSelecionado.id);
+    fecharDrawer();
+    await carregarMedicos();
+  } catch (err) {
+    alert("Não foi possível excluir o médico.");
+    console.error(err);
   }
 });
 
-// Cadastrar novo médico
-btnNovo.addEventListener("click", () => {
-  const nome = prompt("Nome do médico:");
-  const especialidade = prompt("Especialidade:");
+// ==== Busca (filtro no front por nome/especialidade) ====
+$search.on("input", aplicarFiltroERender);
 
-  if (nome && especialidade) {
-    const novo = {
-      id: Date.now(),
-      nome,
-      especialidade,
-    };
-    medicos.push(novo);
-    salvarNoLocalStorage();
-    renderMedicos();
+function aplicarFiltroERender() {
+  const termo = ($search.val() || "").toString().trim().toLowerCase();
+  if (!termo) {
+    renderTabela(medicos);
+    return;
   }
-});
+  const filtrados = medicos.filter((m) => {
+    return (
+      (m.nome && m.nome.toLowerCase().includes(termo)) ||
+      (m.especialidade && m.especialidade.toLowerCase().includes(termo)) ||
+      (String(m.id) === termo) // permite filtrar por id exato
+    );
+  });
+  renderTabela(filtrados);
+}
 
-// Inicializa lista
-renderMedicos();
+// ==== Inicialização ====
+$(async function init() {
+  await carregarMedicos();
+});

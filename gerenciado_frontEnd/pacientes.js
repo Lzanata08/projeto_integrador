@@ -1,88 +1,249 @@
+// ===== Integração CRUD de Pacientes (jQuery) =====
+// Endpoints reais (evite barra final em POST/PUT/DELETE):
+// GET  /api/patients
+// GET  /api/patients/{id}
+// POST /api/patients
+// PUT  /api/patients/{id}
+// DELETE /api/patients/{id}
 
-const STORAGE_KEY = "lista_pacientes";
-let pacientes = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+const BASE_URL = "http://localhost:8080/api"; // ajuste se sua API estiver em outra origem/porta
 
-const tbody = document.getElementById("tbody-pacientes-list");
-const drawer = document.getElementById("drawer");
-const drawerNome = document.getElementById("drawer-nome");
-const drawerCPF = document.getElementById("drawer-cpf");
-const drawerNascimento = document.getElementById("drawer-nascimento");
-const drawerClose = document.getElementById("drawer-close");
-const btnAtualizar = document.getElementById("btnAtualizar");
-const btnExcluir = document.getElementById("btnExcluir");
-const btnNovo = document.getElementById("btnNovoPaciente");
+const API = {
+  list: () => $.ajax({ url: `${BASE_URL}/patients`, method: "GET" }),
+  get: (id) => $.ajax({ url: `${BASE_URL}/patients/${encodeURIComponent(id)}`, method: "GET" }),
+  create: (data) =>
+    $.ajax({
+      url: `${BASE_URL}/patients`, // sem barra no final!
+      method: "POST",
+      contentType: "application/json",
+      data: JSON.stringify(data), // { name, cpf, birthdate }
+    }),
+  update: (id, data) =>
+    $.ajax({
+      url: `${BASE_URL}/patients/${encodeURIComponent(id)}`,
+      method: "PUT",
+      contentType: "application/json",
+      data: JSON.stringify(data),
+    }),
+  remove: (id) => $.ajax({ url: `${BASE_URL}/patients/${encodeURIComponent(id)}`, method: "DELETE" }),
+};
 
+// ===== Elementos da UI =====
+const $tbody = $("#tbody-pacientes-list");
+const $drawer = $("#drawer");
+const $drawerNome = $("#drawer-nome");
+const $drawerCPF = $("#drawer-cpf");
+const $drawerNascimento = $("#drawer-nascimento");
+const $drawerClose = $("#drawer-close");
+const $btnAtualizar = $("#btnAtualizar");
+const $btnExcluir = $("#btnExcluir");
+const $btnNovo = $("#btnNovoPaciente");
+const $search = $("#searchPacientes");
+
+// ===== Estado =====
+let pacientes = []; // [{ id, name, cpf, birthdate }]
 let pacienteSelecionado = null;
 
-function salvar() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(pacientes));
+// ===== Utilidades =====
+function escapeHtml(str) {
+  return String(str || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
-function renderPacientes() {
-  tbody.innerHTML = "";
-  if (pacientes.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--muted);">Nenhum paciente cadastrado</td></tr>`;
+function ajaxFail(label) {
+  return (xhr) => {
+    console.error(`${label} falhou`, {
+      url: xhr?.responseURL,
+      status: xhr?.status,
+      response: xhr?.responseText,
+    });
+    alert(`${label} falhou (${xhr?.status || "?"}). Veja o console para detalhes.`);
+  };
+}
+
+function isoToBr(isoLike) {
+  // Converte "aaaa-mm-dd..." -> "dd/mm/aaaa"
+  const s = String(isoLike || "").trim();
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);  
+  if (m) {
+    const [, yyyy, mm, dd] = m;
+    return `${dd}/${mm}/${yyyy}`;
+  } 
+  return s;
+}
+
+function brToIso(brLike) {
+  // Converte "dd/mm/aaaa" -> "aaaa-mm-dd"
+  console.log("brToIso", brLike);
+  const s = String(brLike || "").trim();
+  const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);  
+  console.log("brToIso match", m);
+  if (m) {
+    const [, dd, mm, yyyy] = m;
+    return `${yyyy}-${mm}-${dd}`;
+  } 
+
+  console.log("brToIso no match", s);
+  return s;
+}
+
+// API<->UI mapping para render
+function viewRow(p) {
+  console.log("viewRow", p);
+  return {
+    id: p.id,
+    nome: p.name,
+    cpf: p.cpf,
+    nascimentoBr: isoToBr(p.birthDate),
+  };
+}
+
+// ===== Renderização =====
+function renderTabela(lista) {
+  $tbody.empty();
+  if (!lista || lista.length === 0) {
+    $tbody.append(
+      `<tr><td colspan="3" style="text-align:center; color:var(--muted);">Nenhum paciente cadastrado</td></tr>`
+    );
     return;
   }
-
-  pacientes.forEach((p) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${p.nome}</td><td>${p.cpf}</td><td>${p.nascimento}</td>`;
-    tr.classList.add("row-clickable");
-    tr.addEventListener("click", () => abrirDrawer(p));
-    tbody.appendChild(tr);
+  lista.forEach((p) => {
+    const $tr = $(`
+      <tr class="row-clickable">
+        <td>${escapeHtml(p.nome)}</td>
+        <td>${escapeHtml(p.cpf)}</td>
+        <td>${escapeHtml(p.nascimentoBr)}</td>
+      </tr>
+    `);
+    $tr.on("click", () => abrirDrawer(p));
+    $tbody.append($tr);
   });
 }
 
-function abrirDrawer(p) {
-  pacienteSelecionado = p;
-  drawerNome.textContent = p.nome;
-  drawerCPF.textContent = p.cpf;
-  drawerNascimento.textContent = p.nascimento;
-  drawer.classList.add("open");
-  drawer.hidden = false;
+function carregarPacientes() {
+  mostrarCarregando();
+  API.list()
+    .then((data) => {
+      pacientes = (Array.isArray(data) ? data : []).map(viewRow);
+      aplicarFiltroERender();
+    })
+    .catch((e) => {
+      console.error(e);
+      mostrarErro("Falha ao carregar pacientes.");
+    });
 }
 
-drawerClose.onclick = () => {
-  drawer.classList.remove("open");
-  setTimeout(() => (drawer.hidden = true), 250);
-};
+function mostrarCarregando() {
+  $tbody.html(`<tr><td colspan="3" style="text-align:center;">Carregando...</td></tr>`);
+}
+function mostrarErro(msg) {
+  $tbody.html(
+    `<tr><td colspan="3" style="text-align:center; color:#b00020;">${escapeHtml(msg)}</td></tr>`
+  );
+}
 
-btnNovo.onclick = () => {
+// ===== Drawer =====
+function abrirDrawer(p) {
+  pacienteSelecionado = p;
+  $drawerNome.text(p.nome);
+  $drawerCPF.text(p.cpf);
+  $drawerNascimento.text(p.nascimentoBr);
+  $drawer.addClass("open").removeAttr("hidden").attr("aria-hidden", "false");
+}
+function fecharDrawer() {
+  $drawer.removeClass("open").attr("aria-hidden", "true");
+  setTimeout(() => $drawer.attr("hidden", "true"), 250);
+}
+$drawerClose.on("click", fecharDrawer);
+
+// ===== Busca (front-end) =====
+$search.on("input", aplicarFiltroERender);
+function aplicarFiltroERender() {
+  const termo = ($search.val() || "").toString().trim().toLowerCase();
+  if (!termo) return renderTabela(pacientes);
+  const filtrados = pacientes.filter((p) => {
+    return (
+      (p.nome && p.nome.toLowerCase().includes(termo)) ||
+      (p.cpf && p.cpf.toLowerCase().includes(termo)) ||
+      (p.nascimentoBr && p.nascimentoBr.toLowerCase().includes(termo)) ||
+      (String(p.id) === termo)
+    );
+  });
+  renderTabela(filtrados);
+}
+
+// ===== Cadastrar =====
+$btnNovo.on("click", () => {
   const nome = prompt("Nome do paciente:");
+  if (!nome) return;
   const cpf = prompt("CPF:");
-  const nascimento = prompt("Data de nascimento (dd/mm/aaaa):");
+  if (!cpf) return;
+  const nascimentoBr = prompt("Data de nascimento (dd/mm/aaaa):");
+  if (!nascimentoBr) return;
 
-  if (nome && cpf && nascimento) {
-    pacientes.push({ id: Date.now(), nome, cpf, nascimento });
-    salvar();
-    renderPacientes();
-  }
-};
+  const payload = {
+    name: nome,
+    cpf: cpf,
+    birthdate: brToIso(nascimentoBr),
+  };
 
-btnAtualizar.onclick = () => {
+  API.create(payload)
+    .then(() => carregarPacientes())
+    .catch(ajaxFail("Criar paciente"));
+});
+
+// ===== Atualizar =====
+$btnAtualizar.on("click", () => {
   if (!pacienteSelecionado) return;
+
   const novoNome = prompt("Atualizar nome:", pacienteSelecionado.nome);
+  if (!novoNome) return;
   const novoCPF = prompt("Atualizar CPF:", pacienteSelecionado.cpf);
-  const novoNascimento = prompt("Atualizar data de nascimento:", pacienteSelecionado.nascimento);
+  if (!novoCPF) return;
+  const novoNascimento = prompt(
+    "Atualizar data de nascimento (dd/mm/aaaa):",
+    pacienteSelecionado.nascimentoBr
+  );
+  if (!novoNascimento) return;
 
-  if (novoNome && novoCPF && novoNascimento) {
-    pacienteSelecionado.nome = novoNome;
-    pacienteSelecionado.cpf = novoCPF;
-    pacienteSelecionado.nascimento = novoNascimento;
-    salvar();
-    renderPacientes();
-    abrirDrawer(pacienteSelecionado);
-  }
-};
+  const payload = {
+    name: novoNome,
+    cpf: novoCPF,
+    birthDate: brToIso(novoNascimento),
+  };
 
-btnExcluir.onclick = () => {
-  if (confirm(`Excluir ${pacienteSelecionado.nome}?`)) {
-    pacientes = pacientes.filter((p) => p.id !== pacienteSelecionado.id);
-    salvar();
-    renderPacientes();
-    drawerClose.click();
-  }
-};
+  console.log("Atualizar payload:", payload);
+  API.update(pacienteSelecionado.id, payload)
+    .then(() => {
+      carregarPacientes();
+      // reabrir com dados atualizados, se existir
+      setTimeout(() => {
+        const atualizado = pacientes.find((x) => x.id === pacienteSelecionado.id);
+        if (atualizado) abrirDrawer(atualizado);
+      }, 0);
+    })
+    .catch(ajaxFail("Atualizar paciente"));
+});
 
-renderPacientes();
+// ===== Excluir =====
+$btnExcluir.on("click", () => {
+  if (!pacienteSelecionado) return;
+  const ok = confirm(`Tem certeza que deseja excluir ${pacienteSelecionado.nome}?`);
+  if (!ok) return;
+
+  API.remove(pacienteSelecionado.id)
+    .then(() => {
+      fecharDrawer();
+      carregarPacientes();
+    })
+    .catch(ajaxFail("Excluir paciente"));
+});
+
+// ===== Inicialização =====
+$(function init() {
+  carregarPacientes();
+});
