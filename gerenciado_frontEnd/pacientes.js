@@ -188,7 +188,7 @@ $btnNovo.on("click", () => {
   const payload = {
     name: nome,
     cpf: cpf,
-    birthdate: brToIso(nascimentoBr),
+    birthDate: brToIso(nascimentoBr),
   };
 
   API.create(payload)
