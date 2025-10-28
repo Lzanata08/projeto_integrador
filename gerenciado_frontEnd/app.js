@@ -1,113 +1,225 @@
-// Dados de exemplo — substitua por dados reais ou carregue via API/fetch
-const medicos = [
-{  nome: 'Dra. Ana Ribeiro', especialidade: 'Pediatria' },
-{  nome: 'Dr. Bruno Santos', especialidade: 'Cardiologia' },
-{  nome: 'Dra. Carla Nunes', especialidade: 'Dermatologia' },
-];
+// app.js — Home: carrega médicos, pacientes e consultas do backend (sem dados estáticos)
 
+const BASE_URL = "http://localhost:8080/api"; // mantenha consistente com as outras páginas
 
-const pacientes = [
-{ cpf: '123.456.789-00', nome: 'Marcos Lima', nascimento: '1989-07-18' },
-{ cpf: '987.654.321-00', nome: 'Beatriz Souza', nascimento: '1995-02-05' },
-{ cpf: '111.222.333-44', nome: 'José Almeida', nascimento: '1978-11-23' },
-];
-
-
-const consultas = [
-{ id: 'C-101', paciente: 'Marcos Lima', medico: 'Dra. Ana Ribeiro', data: '2025-11-05 14:00', notas: 'Agendada' },
-{ id: 'C-102', paciente: 'Beatriz Souza', medico: 'Dr. Bruno Santos', data: '2025-11-06 09:30', notas: 'Confirmada' },
-{ id: 'C-103', paciente: 'José Almeida', medico: 'Dra. Carla Nunes', data: '2025-11-07 16:10',notas: 'Agendada' },
-];
-
-function renderMedicos(filter = '') {
-const tbody = document.getElementById('tbody-medicos');
-tbody.innerHTML = '';
-medicos
-.filter(m => m.nome.toLowerCase().includes(filter) || m.especialidade.toLowerCase().includes(filter))
-.forEach(m => {
-const tr = document.createElement('tr');
-tr.innerHTML = `<td>${m.nome}</td><td>${m.especialidade}</td>`;
-tbody.appendChild(tr);
-});
+// ===== Utils =====
+async function fetchJSON(url) {
+  const res = await fetch(url, { headers: { "Accept": "application/json" } });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status} - ${txt || url}`);
+  }
+  return res.json();
 }
 
-function renderPacientes(filter = '') {
-const tbody = document.getElementById('tbody-pacientes');
-tbody.innerHTML = '';
-pacientes
-.filter(p => {
-const f = filter.trim().toLowerCase();
-const fNum = f.replace(/[^0-9]/g, '');
-const cpfNum = p.cpf.replace(/[^0-9]/g, '');
-return p.nome.toLowerCase().includes(f) ||
-cpfNum.includes(fNum) ||
-p.cpf.toLowerCase().includes(f) ||
-p.nascimento.includes(f);
-    })
-.forEach(p => {
-const tr = document.createElement('tr');
-const nasc = new Date(p.nascimento).toLocaleDateString('pt-BR');
-tr.innerHTML = `<td>${p.nome}</td><td>${nasc}</td><td>${p.cpf}</td>`;
-tbody.appendChild(tr);
-});
+function setCellText(td, text) {
+  td.textContent = text == null ? "-" : String(text);
 }
 
-
-
-
-
-function renderConsultas(filter = '') {
-const tbody = document.getElementById('tbody-consultas');
-tbody.innerHTML = '';
-consultas
-.filter(c =>
-c.id.toLowerCase().includes(filter) ||
-c.paciente.toLowerCase().includes(filter) ||
-c.medico.toLowerCase().includes(filter) ||
-c.data.toLowerCase().includes(filter) ||
-c.status.toLowerCase().includes(filter)
-)
-.forEach(c => {
-const tr = document.createElement('tr');
-const dataFmt = new Date(c.data.replace(' ', 'T')).toLocaleString('pt-BR');
-tr.innerHTML = `<td>${c.id}</td><td>${c.paciente}</td><td>${c.medico}</td><td>${dataFmt}</td><td>${c.status}</td>`;
-tbody.appendChild(tr);
-});
+// Pacientes: ISO date -> dd/mm/aaaa
+function isoDateToBr(isoLike) {
+  const s = String(isoLike || "").trim();
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) {
+    const [, yyyy, mm, dd] = m;
+    return `${dd}/${mm}/${yyyy}`;
+  }
+  return s || "-";
 }
 
-
-function setActiveMenu(btn) {
-document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active'));
-btn.classList.add('active');
+// Consultas: "YYYY-MM-DDTHH:mm[:ss]" (sem timezone) -> local date/time
+function parseIsoLocal(isoLocal) {
+  if (!isoLocal || typeof isoLocal !== "string") return null;
+  const parts = isoLocal.split("T");
+  if (parts.length !== 2) return null;
+  const d = parts[0].split("-");
+  const t = parts[1].split(":");
+  if (d.length < 3 || t.length < 2) return null;
+  const year = parseInt(d[0], 10);
+  const month = parseInt(d[1], 10) - 1;
+  const day = parseInt(d[2], 10);
+  const hour = parseInt(t[0], 10);
+  const minute = parseInt(t[1], 10);
+  let second = 0;
+  if (t.length >= 3) {
+    const secStr = t[2].split(".")[0];
+    second = parseInt(secStr, 10) || 0;
+  }
+  const dt = new Date(year, month, day, hour, minute, second);
+  return isNaN(dt.getTime()) ? null : dt;
 }
 
-
-function wireup() {
-// Render inicial
-renderMedicos();
-renderPacientes();
-renderConsultas();
-
-
-// Busca global
-const search = document.getElementById('globalSearch');
-search.addEventListener('input', (e) => {
-const q = e.target.value.trim().toLowerCase();
-renderMedicos(q);
-renderPacientes(q);
-renderConsultas(q);
-});
-
-
-// Navegação lateral (scroll até a seção)
-document.querySelectorAll('.menu-item').forEach(btn => {
-btn.addEventListener('click', () => {
-setActiveMenu(btn);
-const target = document.querySelector(btn.dataset.target);
-target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-});
-});
+function brDate(dt) {
+  if (!dt) return "-";
+  try { return dt.toLocaleDateString("pt-BR"); } 
+  catch(_) { 
+    const dd = String(dt.getDate()).padStart(2,"0");
+    const mm = String(dt.getMonth()+1).padStart(2,"0");
+    const yyyy = dt.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+}
+function brTime(dt) {
+  if (!dt) return "-";
+  try { return dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); } 
+  catch(_) {
+    const HH = String(dt.getHours()).padStart(2,"0");
+    const MM = String(dt.getMinutes()).padStart(2,"0");
+    return `${HH}:${MM}`;
+  }
 }
 
+// ===== Estado =====
+let state = {
+  medicos: [],          // [{id, name, speciality}]
+  pacientes: [],        // [{id, name, cpf, birthDate}]
+  consultas: []         // [{id, patient:{id,name,...}, doctor:{id,name,...}, dateTime, notes}]
+};
 
-document.addEventListener('DOMContentLoaded', wireup);
+// ===== Render =====
+function renderMedicos(filter = "") {
+  const tbody = document.getElementById("tbody-medicos");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  const f = filter.toLowerCase();
+  const lista = !f ? state.medicos : state.medicos.filter(m =>
+    (m.name||"").toLowerCase().includes(f) || (m.speciality||"").toLowerCase().includes(f)
+  );
+
+  if (lista.length === 0) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="2" style="text-align:center; color:var(--muted);">Nenhum médico</td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+
+  lista.forEach(m => {
+    const tr = document.createElement("tr");
+    const tdNome = document.createElement("td");
+    const tdEsp  = document.createElement("td");
+    setCellText(tdNome, m.name);
+    setCellText(tdEsp, m.speciality);
+    tr.append(tdNome, tdEsp);
+    tbody.appendChild(tr);
+  });
+}
+
+function renderPacientes(filter = "") {
+  const tbody = document.getElementById("tbody-pacientes");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  const f = filter.toLowerCase();
+  const lista = !f ? state.pacientes : state.pacientes.filter(p => {
+    const cpfNum = String(p.cpf||"").replace(/[^0-9]/g,"");
+    const fNum = filter.replace(/[^0-9]/g,"");
+    return (p.name||"").toLowerCase().includes(f) || cpfNum.includes(fNum) || (p.cpf||"").toLowerCase().includes(f) || (p.birthDate||"").includes(filter);
+  });
+
+  if (lista.length === 0) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="3" style="text-align:center; color:var(--muted);">Nenhum paciente</td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+
+  lista.forEach(p => {
+    const tr = document.createElement("tr");
+    const tdNome = document.createElement("td");
+    const tdNasc = document.createElement("td");
+    const tdCPF  = document.createElement("td");
+    setCellText(tdNome, p.name);
+    setCellText(tdNasc, isoDateToBr(p.birthDate));
+    setCellText(tdCPF, p.cpf);
+    tr.append(tdNome, tdNasc, tdCPF);
+    tbody.appendChild(tr);
+  });
+}
+
+function renderConsultas(filter = "") {
+  const tbody = document.getElementById("tbody-consultas");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  const f = filter.toLowerCase();
+  const lista = !f ? state.consultas : state.consultas.filter(c => {
+    return String(c.id||"").toLowerCase().includes(f) ||
+           (c.patient && c.patient.name || "").toLowerCase().includes(f) ||
+           (c.doctor && c.doctor.name || "").toLowerCase().includes(f) ||
+           (c.notes||"").toLowerCase().includes(f) ||
+           (c.dateTime||"").toLowerCase().includes(f);
+  });
+
+  if (lista.length === 0) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="5" style="text-align:center; color:var(--muted);">Nenhuma consulta</td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+
+  lista.forEach(c => {
+    const tr = document.createElement("tr");
+    const tdId = document.createElement("td");
+    const tdPac = document.createElement("td");
+    const tdMed = document.createElement("td");
+    const tdData = document.createElement("td");
+    const tdNotas = document.createElement("td");
+
+    const dt = parseIsoLocal(c.dateTime);
+    setCellText(tdId, c.id);
+    setCellText(tdPac, c.patient && c.patient.name);
+    setCellText(tdMed, c.doctor && c.doctor.name);
+    setCellText(tdData, dt ? `${brDate(dt)} ${brTime(dt)}` : "-");
+    setCellText(tdNotas, c.notes);
+
+    tr.append(tdId, tdPac, tdMed, tdData, tdNotas);
+    tbody.appendChild(tr);
+  });
+}
+
+// ===== Carregamento =====
+async function carregarTudo() {
+  const medicosTbody = document.getElementById("tbody-medicos");
+  const pacientesTbody = document.getElementById("tbody-pacientes");
+  const consultasTbody = document.getElementById("tbody-consultas");
+  if (medicosTbody) medicosTbody.innerHTML = `<tr><td colspan="2" style="text-align:center;">Carregando...</td></tr>`;
+  if (pacientesTbody) pacientesTbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">Carregando...</td></tr>`;
+  if (consultasTbody) consultasTbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Carregando...</td></tr>`;
+
+  try {
+    const [medicos, pacientes, consultas] = await Promise.all([
+      fetchJSON(`${BASE_URL}/doctors`),
+      fetchJSON(`${BASE_URL}/patients`),
+      fetchJSON(`${BASE_URL}/appointments`),
+    ]);
+
+    state.medicos = Array.isArray(medicos) ? medicos : [];
+    state.pacientes = Array.isArray(pacientes) ? pacientes : [];
+    state.consultas = Array.isArray(consultas) ? consultas : [];
+
+    renderMedicos();
+    renderPacientes();
+    renderConsultas();
+  } catch (err) {
+    console.error("Falha ao carregar dados:", err);
+    if (medicosTbody) medicosTbody.innerHTML = `<tr><td colspan="2" style="text-align:center; color:#b00020;">Erro ao carregar médicos</td></tr>`;
+    if (pacientesTbody) pacientesTbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#b00020;">Erro ao carregar pacientes</td></tr>`;
+    if (consultasTbody) consultasTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#b00020;">Erro ao carregar consultas</td></tr>`;
+  }
+}
+
+// ===== Busca global =====
+function wireupSearch() {
+  const search = document.getElementById("globalSearch");
+  if (!search) return;
+  search.addEventListener("input", (e) => {
+    const q = (e.target.value || "").trim().toLowerCase();
+    renderMedicos(q);
+    renderPacientes(q);
+    renderConsultas(q);
+  });
+}
+
+// ===== Init =====
+document.addEventListener("DOMContentLoaded", () => {
+  carregarTudo();
+  wireupSearch();
+});
