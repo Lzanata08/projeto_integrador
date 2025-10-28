@@ -11,13 +11,13 @@ public class Doctor {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     private String name;
-    private String specialty;
+    private String speciality;
 
     public Doctor() {}
 
-    public Doctor(String name, String specialty) {
+    public Doctor(String name, String speciality) {
         this.name = name;
-        this.specialty = specialty;
+        this.speciality = speciality;
     }
 
     public Long getId() { return id; }
@@ -26,8 +26,8 @@ public class Doctor {
     
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
-    public String getSpecialty() { return specialty; }
-    public void setSpecialty(String specialty) { this.specialty = specialty; }
+    public String getSpeciality() { return speciality; }
+    public void setSpeciality(String specialty) { this.speciality = specialty; }
     
    
 }

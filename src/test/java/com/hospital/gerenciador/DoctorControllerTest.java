@@ -17,6 +17,7 @@ import java.util.Arrays;
 
 
 import java.util.List;
+import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -57,7 +58,7 @@ class DoctorControllerTest {
     void testGetDoctorById() throws Exception {
         Doctor d = new Doctor();
         d.setId(1L);
-        when(doctorService.findById(1L)).thenReturn((d));
+        when(doctorService.findById(1L)).thenReturn((Optional.of(d)));
 
         ResponseEntity<Doctor> result= doctorController.listById(1L);
 

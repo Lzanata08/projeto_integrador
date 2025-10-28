@@ -1,6 +1,7 @@
 package com.hospital.service;
 
 import com.hospital.model.Appointment;
+import com.hospital.model.Doctor;
 import com.hospital.repository.AppointmentRepository;
 import org.springframework.stereotype.Service;
 
@@ -34,9 +35,8 @@ public class AppointmentService {
                                                  .collect(Collectors.toList());        
     }
     
-    public Appointment findById(Long id) throws Exception{
-        return appointmentRepository.findById(id)
-                .orElseThrow(() -> new jakarta.ws.rs.NotFoundException("Compromisso não encontrado"));
+    public Optional<Appointment> findById(Long id) throws Exception{
+        return appointmentRepository.findById(id);
     }
 
     public Appointment create(Appointment appointment){
@@ -46,9 +46,19 @@ public class AppointmentService {
         } else {
             return appointmentRepository.save(appointment);
         }
-        
-        
     };
+    
+    public Appointment update(Long id, Appointment request) {
+        Appointment appointment = appointmentRepository.findById(id).get();
+
+        if (appointment != null) {
+            appointment.setDateTime(request.getDateTime());
+            appointment.setNotes(request.getNotes());                       
+            return appointmentRepository.save(appointment);
+        }
+
+        return null;
+    }
     
     public void delete(Long id){
          appointmentRepository.deleteById(id);

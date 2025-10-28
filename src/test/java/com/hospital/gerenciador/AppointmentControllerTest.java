@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 
 import java.util.List;
+import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -56,7 +57,7 @@ class AppointmentControllerTest {
     void testGetAppointmentById() throws Exception {
         Appointment ap = new Appointment(new Patient("Paciente B", "018"), new Doctor("Doutor", "Pediatra"),LocalDateTime.now());
         ap.setId(1L);
-        when(appointmentService.findById(1L)).thenReturn(ap);
+        when(appointmentService.findById(1L)).thenReturn(Optional.of(ap));
 
         ResponseEntity<Appointment> result = appointmentController.listById(1L);
 

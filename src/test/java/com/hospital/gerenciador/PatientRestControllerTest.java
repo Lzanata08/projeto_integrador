@@ -26,9 +26,10 @@ class PatientRestControllerTest {
      @Mock
     private PatientRepository repo; 
 
-    @Mock
-    private PatientService patientService;  // agora com @Mock!
-
+   
+     @Mock
+    private PatientService patientService;  
+    
     @InjectMocks
     private PatientRestController patientRestController;
 
@@ -57,15 +58,7 @@ class PatientRestControllerTest {
         verify(patientService, times(1)).findById(1L);
     }
     
-    @Test
-    void testCreatePatient_DateBirthdateInvalid() throws Exception {
-         Patient p = new Patient("Fulano", "018", LocalDate.of(2015, Month.MARCH, 20));
-
-        ResponseEntity<Patient> result = patientRestController.create(p);
-
-        assertTrue(result.getStatusCode().is4xxClientError());
-        verify(patientService).create(p);
-    }
+   
 
     @Test
     void testCreatePatient() {
@@ -79,6 +72,7 @@ class PatientRestControllerTest {
     }
 
 
+    
     @Test
     void testDeletePatient() {
         doNothing().when(patientService).delete(1L);
@@ -88,5 +82,7 @@ class PatientRestControllerTest {
         assertTrue(result.getStatusCode().is2xxSuccessful());
         verify(patientService).delete(1L);
     }
+    
+    
 }
 

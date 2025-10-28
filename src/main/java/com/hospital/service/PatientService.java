@@ -1,5 +1,6 @@
 package com.hospital.service;
 
+
 import com.hospital.model.Patient;
 import com.hospital.repository.PatientRepository;
 import java.time.LocalDate;
@@ -47,9 +48,8 @@ public class PatientService {
                 .collect(Collectors.toList());
     }
 
-    public Patient findById(Long id) throws Exception{
-        return patientRepository.findById(id)
-                .orElseThrow(() -> new jakarta.ws.rs.NotFoundException("Compromisso não encontrado"));
+    public Optional<Patient> findById(Long id) throws Exception{
+        return patientRepository.findById(id);
     }
   
      public void delete(Long id){
@@ -57,12 +57,16 @@ public class PatientService {
     };
 
     public ResponseEntity<Patient> update(Long id, Patient patient) {
-        return patientRepository.findById(id).map(existing -> {
+        Patient existing = patientRepository.findById(id).get();
+        
+        if(existing != null){
             existing.setName(patient.getName());
             existing.setCpf(patient.getCpf());
-            patientRepository.save(patient);
-            return ResponseEntity.ok(existing);
-        }).orElseGet(() -> ResponseEntity.notFound().build());
+            existing.setBirthDate(patient.getBirthDate());
+            patientRepository.save(existing);
+            return ResponseEntity.ok(existing);        
+        }
+        return ResponseEntity.notFound().build();
     }
 }
 

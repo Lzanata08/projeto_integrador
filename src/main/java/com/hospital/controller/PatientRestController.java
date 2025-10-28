@@ -1,7 +1,6 @@
 package com.hospital.controller;
 
 import com.hospital.model.Patient;
-import com.hospital.repository.PatientRepository;
 import com.hospital.service.PatientService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,8 +11,8 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/api/patients")
+@CrossOrigin(origins = "*")
 public class PatientRestController {
 
     private final PatientService service;
@@ -22,31 +21,27 @@ public class PatientRestController {
         this.service = service;
         
     }
-    
-    
-    // ✅ Corrigido: findAll() é o método padrão do Spring Data JPA
+        
     @GetMapping
     public List<Patient> listAll() {
-        return (List<Patient>) service.findAll();
-   
+        return (List<Patient>) service.findAll();   
     }
-
 
     @GetMapping("/{id}")
     public ResponseEntity<Patient> listById(@PathVariable Long id) throws Exception {
-        Patient p = service.findById(id);
-        if (p == null )
-             return    ResponseEntity.notFound().build();
-        else {
-            return ResponseEntity.ok(p);
-                }
-        
+         Optional<Patient> patient = service.findById(id);
+         if(patient != null){
+           return  patient.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+         }else{
+             return ResponseEntity.notFound().build();
+         }
     }
 
-    @PostMapping
+    @PostMapping    
     public ResponseEntity<Patient> create(@RequestBody Patient patient) {
         Patient saved = service.create(patient);
-        return ResponseEntity.created(URI.create("/api/patients/" + saved.getId())).body(saved);
+        return ResponseEntity.ok(saved);
     }
 
     @PutMapping("/{id}")
@@ -56,8 +51,8 @@ public class PatientRestController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity delete(@PathVariable("id") Long id) {
-    service.delete(id);
-    return ResponseEntity.ok().build();
+        service.delete(id);
+        return ResponseEntity.ok().build();
     }
 
 
